@@ -102,5 +102,7 @@ public class BoundarySegmentMatcherTest {
         timeElapsedMillis = (System.currentTimeMillis() - startTime);
         System.out.println("Matched p=" + matched / (double) runs + " of n=" + runs +
                 " random sequences in dt=" + timeElapsedMillis + "ms");
+
+        Assert.assertTrue(matched / (double) runs <= 0.004);
     }
 }
