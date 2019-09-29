@@ -10,7 +10,7 @@ public class MainCli implements Runnable {
         CommandLine cmd = new CommandLine(new MainCli())
                 .addSubcommand("hash", new HashFilterCli())
                 .addSubcommand("tree", new TreeFilterCli());
-        cmd.parseWithHandler(new CommandLine.RunAll(), args);
+        cmd.execute(args);
     }
 
     @Override

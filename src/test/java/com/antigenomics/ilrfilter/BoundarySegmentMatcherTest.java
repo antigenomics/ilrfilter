@@ -50,7 +50,7 @@ public class BoundarySegmentMatcherTest {
     }
 
     @Test
-    public void testFN() throws IOException {
+    public void testFN() {
         BoundarySegmentMatcher<VDJCGene, TreeMatcher<VDJCGene>> bsm = new BoundarySegmentMatcher<>(
                 new TreeMatcherFactory<>(16, new TreeSearchParameters(1, 0, 0)),
                 new RepseqioReferenceProvider(), "hsa", 0, false

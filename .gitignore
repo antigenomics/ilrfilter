@@ -1,4 +1,5 @@
 *.iml
+/test/*.fastq
 /.idea
 target/
 pom.xml.tag

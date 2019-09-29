@@ -14,19 +14,15 @@ public final class SequenceReaderIterator<T extends SequenceRead>
 
     public SequenceReaderIterator(SequenceReaderCloseable<T> reader) {
         this.reader = reader;
-        this.read = reader.take();
-
     }
 
     @Override
     public boolean hasNext() {
-        if (read == null) {
+        if ((read = reader.take()) == null) {
             close();
             return false;
-        } else {
-            read = reader.take();
-            return read != null;
         }
+        return true;
     }
 
     @Override

@@ -20,12 +20,6 @@ public abstract class AbstractFilterCli implements Runnable {
             description = "Path to input file(s), space-separated")
     protected List<String> inputPaths;
 
-    @CommandLine.Option(names = {"-O", "--organism"},
-            required = true,
-            paramLabel = "<id>",
-            description = "Specify organism (allowed values: hsa, mmu)")
-    protected String species;
-
     @CommandLine.Option(names = {"-O", "--output"},
             required = true,
             paramLabel = "<path/prefix>",
@@ -37,6 +31,12 @@ public abstract class AbstractFilterCli implements Runnable {
             paramLabel = "[3,inf)",
             description = "K-mer size (default: ${DEFAULT-VALUE})")
     protected int kSize;
+
+    @CommandLine.Option(names = {"-S", "--species"},
+            required = true,
+            paramLabel = "<id>",
+            description = "Specify organism (allowed values: hsa, mmu)")
+    protected String species;
 
     @CommandLine.Option(names = {"-s", "--max-substitutions"},
             defaultValue = "1",
@@ -100,7 +100,7 @@ public abstract class AbstractFilterCli implements Runnable {
 
                         if (total % 100000L == 0) {
                             sout("Processed N=" + total + " reads, p=" +
-                                    passed / (double) total + "(n=" + passed + ") reads passed filter.");
+                                    passed / (float) total + "(n=" + passed + ") reads passed filter.");
                         }
 
                         return passes;
@@ -108,7 +108,11 @@ public abstract class AbstractFilterCli implements Runnable {
                 }
 
                 reader.close();
-                sout("Finished processing " + inputPaths);
+
+                long total = totalReads.get(),
+                        passed = readsPassedFilter.get();
+                sout("Finished processing " + inputPaths + ". Processed N=" + total + " reads, p=" +
+                        passed / (float) total + "(n=" + passed + ") reads passed filter.");
             } else {
                 throw new ExecutionControl.NotImplementedException("Not implemented for single read case, " +
                         "make a feature request if you need it...");
@@ -132,7 +136,7 @@ public abstract class AbstractFilterCli implements Runnable {
         }
 
         return outputPrefix +
-                (outputPrefix.endsWith(File.separator) ? "" : ".") +
+                (outputPrefix.endsWith(File.separator) ? "output" : "") +
                 suffix;
     }
 
