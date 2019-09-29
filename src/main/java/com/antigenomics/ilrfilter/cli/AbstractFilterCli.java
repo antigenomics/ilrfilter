@@ -51,7 +51,7 @@ public abstract class AbstractFilterCli implements Runnable {
     protected int limit;
 
     @CommandLine.Option(names = {"-mo", "--max-offset"},
-            defaultValue = "3",
+            defaultValue = "1",
             paramLabel = "[0,inf)",
             description = "Max offset from read boundary (default: ${DEFAULT-VALUE})")
     protected int maxOffset;
@@ -98,7 +98,7 @@ public abstract class AbstractFilterCli implements Runnable {
                         long total = totalReads.incrementAndGet(),
                                 passed = passes ? readsPassedFilter.incrementAndGet() : readsPassedFilter.get();
 
-                        if (total % 100000L == 0) {
+                        if (total % 500000L == 0) {
                             sout("Processed N=" + total + " reads, p=" +
                                     passed / (float) total + "(n=" + passed + ") reads passed filter.");
                         }
@@ -125,6 +125,10 @@ public abstract class AbstractFilterCli implements Runnable {
     private void makeFolders() {
         var targetPath = new File(createPath("tmp", false));
         var parent = targetPath.getParentFile();
+        if (parent == null) {
+            // Local path
+            return;
+        }
         if (!parent.exists() && !parent.mkdirs()) {
             throw new IllegalStateException("Couldn't create dir: " + parent);
         }
