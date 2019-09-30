@@ -1,6 +1,7 @@
 package com.antigenomics.ilrfilter;
 
 import com.milaboratory.core.io.sequence.PairedRead;
+import com.milaboratory.core.io.sequence.SequenceRead;
 import com.milaboratory.core.io.sequence.SingleRead;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
@@ -20,6 +21,10 @@ public final class BoundarySegmentMatcher<T, V extends AbstractKmerMatcher<T>> {
         this.matcher = matcherFactory.create(referenceProvider.getReferences(species));
         this.maxOffset = maxOffset;
         this.outerBoundMatchOnly = outerBoundMatchOnly;
+    }
+
+    public List<T> match(SingleRead read) {
+        return match(read, true);
     }
 
     public List<T> match(SingleRead read, boolean first) {
@@ -43,5 +48,13 @@ public final class BoundarySegmentMatcher<T, V extends AbstractKmerMatcher<T>> {
 
     public KMerMatcher<T> getMatcher() {
         return matcher;
+    }
+
+    public BsmProcessor<SingleRead, T> asSingleReadProcessor() {
+        return input -> new AnnotatedRead<>(match(input), input);
+    }
+
+    public BsmProcessor<PairedRead, T> asPairedReadProcessor() {
+        return input -> new AnnotatedRead<>(match(input), input);
     }
 }
