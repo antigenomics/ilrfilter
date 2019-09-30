@@ -21,7 +21,7 @@ public abstract class AbstractKmerMatcher<T> implements KMerMatcher<T> {
             throw new IllegalArgumentException("Sequence should have length of k=" + k);
         }
 
-        var res = matchInner(query);
+        List<T> res = matchInner(query);
 
         return res == null ? Collections.emptyList() : res;
     }

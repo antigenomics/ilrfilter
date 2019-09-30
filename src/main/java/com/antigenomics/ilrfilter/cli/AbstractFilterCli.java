@@ -1,16 +1,11 @@
 package com.antigenomics.ilrfilter.cli;
 
-import cc.redberry.pipe.CUtils;
-import cc.redberry.pipe.blocks.ParallelProcessor;
-import cc.redberry.pipe.util.CountLimitingOutputPort;
 import com.antigenomics.ilrfilter.*;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fastq.PairedFastqReader;
 import com.milaboratory.core.io.sequence.fastq.PairedFastqWriter;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqReader;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
-import com.milaboratory.util.CanReportProgress;
-import com.milaboratory.util.SmartProgressReporter;
 import io.repseq.core.VDJCGene;
 import picocli.CommandLine;
 
@@ -18,6 +13,7 @@ import java.io.*;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 public abstract class AbstractFilterCli implements Runnable {
     @CommandLine.Option(names = {"-I", "--input"},
@@ -83,7 +79,7 @@ public abstract class AbstractFilterCli implements Runnable {
 
             sout("Started processing " + inputPaths + ". Initializing K-mer library..");
 
-            var bsm = new BoundarySegmentMatcher<>(
+            BoundarySegmentMatcher<VDJCGene, ? extends AbstractKmerMatcher<VDJCGene>> bsm = new BoundarySegmentMatcher<>(
                     getMatcherFactory(),
                     new RepseqioReferenceProvider(),
                     species,
@@ -94,18 +90,18 @@ public abstract class AbstractFilterCli implements Runnable {
             sout("K-mer library initialized.");
 
             if (inputPaths.size() == 2) {
-                try (var reader = new PairedFastqReader(
+                try (PairedFastqReader reader = new PairedFastqReader(
                         inputPaths.get(0),
                         inputPaths.get(1));
-                     var writer = new PairedFastqWriter(
+                     PairedFastqWriter writer = new PairedFastqWriter(
                              createPath("_R1.fastq", true),
                              createPath("_R2.fastq", false)
                      )) {
                     runPipeline(reader, writer, bsm.asPairedReadProcessor());
                 }
             } else {
-                try (var reader = new SingleFastqReader(inputPaths.get(0));
-                     var writer = new SingleFastqWriter(createPath("_R1.fastq", true))) {
+                try (SingleFastqReader reader = new SingleFastqReader(inputPaths.get(0));
+                     SingleFastqWriter writer = new SingleFastqWriter(createPath("_R1.fastq", true))) {
                     runPipeline(reader, writer, bsm.asSingleReadProcessor());
                 }
             }
@@ -114,13 +110,13 @@ public abstract class AbstractFilterCli implements Runnable {
         }
     }
 
+    private final AtomicLong totalReads = new AtomicLong(), readsPassedFilter = new AtomicLong();
+
     private <R extends SequenceRead, T>
     void runPipeline(SequenceReaderCloseable<R> reader,
                      SequenceWriter<R> writer,
                      BsmProcessor<R, T> bsmProcessor) {
-        AtomicLong totalReads = new AtomicLong(), readsPassedFilter = new AtomicLong();
-
-        var stream = new SequenceReaderIterator<>(reader).parallelStream();
+        Stream<R> stream = new SequenceReaderIterator<>(reader).parallelStream();
 
         if (limit > 0) {
             stream = stream.limit(limit);
@@ -129,26 +125,28 @@ public abstract class AbstractFilterCli implements Runnable {
         stream.filter(x -> {
             boolean passes = bsmProcessor.process(x).isAnnotated();
 
-            long total = totalReads.incrementAndGet(),
-                    passed = passes ? readsPassedFilter.incrementAndGet() : readsPassedFilter.get();
-
-            if (total % 1000000L == 0) {
-                sout("Processed N=" + total + " reads, p=" +
-                        passed / (float) total + "(n=" + passed + ") reads passed filter.");
-            }
+            reportProgress(false, passes);
 
             return passes;
         }).forEach(writer::write);
 
-        long total = totalReads.get(),
-                passed = readsPassedFilter.get();
-        sout("Finished processing " + inputPaths + ". Processed N=" + total + " reads, p=" +
-                passed / (float) total + "(n=" + passed + ") reads passed filter.");
+        reportProgress(true, false);
+    }
+
+    private void reportProgress(boolean finished, boolean passes) {
+        long total = finished ? totalReads.get() : totalReads.incrementAndGet(),
+                passed = passes ? readsPassedFilter.incrementAndGet() : readsPassedFilter.get();
+
+        if (finished || total % 1000000L == 0) {
+            sout((finished ? "Finished processing " + inputPaths + ". " : "") +
+                    "Processed N=" + total + " reads, p=" +
+                    passed / (float) total + "(n=" + passed + ") reads passed filter.");
+        }
     }
 
     private void makeFolders() {
-        var targetPath = new File(createPath("tmp", false));
-        var parent = targetPath.getParentFile();
+        File targetPath = new File(createPath("tmp", false));
+        File parent = targetPath.getParentFile();
         if (parent == null) {
             // Local path
             return;

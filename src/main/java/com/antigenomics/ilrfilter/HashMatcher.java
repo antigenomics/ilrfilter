@@ -57,7 +57,7 @@ public final class HashMatcher<T> extends AbstractKmerMatcher<T> {
     long getKmer(NucleotideSequence sequence) {
         long kmer = 0;
         for (int i = 0; i < k; ++i) {
-            kmer = kmer << 2 | sequence.codeAt(i);
+            kmer = kmer << 2 | (sequence.codeAt(i) & 3); // avoid N's
         }
         return kmer;
     }

@@ -12,10 +12,10 @@ import static org.junit.Assert.*;
 public class AbstractKmerMatcherTest {
     @Test
     public void matchOffset() {
-        var shm = new HashMatcher<>(Arrays.asList(
+        HashMatcher shm = new HashMatcher<>(Arrays.asList(
                 new SequenceWithPayloadImpl<>("ATGCAC", "1")),
                 6, 1);
         assertEquals(Collections.emptyList(), shm.matchWithOffset(new NucleotideSequence("AATGCAC"), 0, true));
-        assertEquals(List.of("1"), shm.matchWithOffset(new NucleotideSequence("AATGCAC"), 1, true));
+        assertEquals(Arrays.asList("1"), shm.matchWithOffset(new NucleotideSequence("AATGCAC"), 1, true));
     }
 }

@@ -31,16 +31,16 @@ public class BoundarySegmentMatcherTest {
                 new RepseqioReferenceProvider(), "hsa", 0, true
         );
         //System.out.println(reads.get(0).getR1().getData().getSequence());
-        var res1 = bsm.match(reads.get(0).getR1(), true);
+        List<VDJCGene> res1 = bsm.match(reads.get(0).getR1(), true);
         Assert.assertTrue(!res1.isEmpty());
         Assert.assertEquals("TRAJ57", cleanGeneName(res1.get(0).getName()));
-        var res2 = bsm.match(reads.get(0).getR2(), true);
+        List<VDJCGene> res2 = bsm.match(reads.get(0).getR2(), true);
         Assert.assertTrue(!res2.isEmpty());
         Assert.assertEquals("TRAV38", cleanGeneName(res2.get(0).getName()));
-        var res3 = bsm.match(reads.get(0).getR1(), false);
+        List<VDJCGene> res3 = bsm.match(reads.get(0).getR1(), false);
         Assert.assertTrue(!res3.isEmpty());
         Assert.assertEquals("TRAV38", cleanGeneName(res3.get(0).getName()));
-        var res4 = bsm.match(reads.get(0).getR2(), false);
+        List<VDJCGene> res4 = bsm.match(reads.get(0).getR2(), false);
         Assert.assertTrue(!res4.isEmpty());
         Assert.assertEquals("TRAV38", cleanGeneName(res4.get(0).getName()));
     }
@@ -58,7 +58,7 @@ public class BoundarySegmentMatcherTest {
 
         int matches = 0;
         for (PairedRead read : reads) {
-            var res = bsm.match(read);
+            List<VDJCGene> res = bsm.match(read);
             if (!res.isEmpty()) {
                 matches++;
             }
@@ -86,7 +86,7 @@ public class BoundarySegmentMatcherTest {
                 matcherFactory,
                 new RepseqioReferenceProvider(), "hsa", 0, true
         );
-        var matcher = boundarySegmentMatcher.getMatcher();
+        KMerMatcher matcher = boundarySegmentMatcher.getMatcher();
         long timeElapsedMillis = (System.currentTimeMillis() - startTime);
         System.out.println("Created " + matcher + " matcher with m=" +
                 matcher.getKmers().size() + "k-mers in dt=" +

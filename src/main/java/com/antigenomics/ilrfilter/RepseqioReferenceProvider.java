@@ -7,6 +7,7 @@ import io.repseq.core.VDJCLibrary;
 import io.repseq.core.VDJCLibraryRegistry;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class RepseqioReferenceProvider implements ReferenceProvider<VDJCGene> {
@@ -25,7 +26,7 @@ public final class RepseqioReferenceProvider implements ReferenceProvider<VDJCGe
                 continue;
 
             for (VDJCGene gene : lib.getGenes()) {
-                for (GeneFeature geneFeature : List.of(GeneFeature.VRegion, GeneFeature.JRegion, GeneFeature.CRegion)) {
+                for (GeneFeature geneFeature : Arrays.asList(GeneFeature.VRegion, GeneFeature.JRegion, GeneFeature.CRegion)) {
                     NucleotideSequence featureSequence = gene.getFeature(geneFeature);
 
                     if (featureSequence == null)
