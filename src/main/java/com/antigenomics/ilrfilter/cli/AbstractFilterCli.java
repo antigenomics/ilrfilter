@@ -58,7 +58,7 @@ public abstract class AbstractFilterCli implements Runnable {
     protected int limit;
 
     @CommandLine.Option(names = {"-t", "--threads"},
-            defaultValue = "-1",
+            defaultValue = "4mc",
             paramLabel = "[1,inf)",
             description = "Number of threads to use. Will use all available threads if not a positive number (default: ${DEFAULT-VALUE})")
     protected int threads;
@@ -75,8 +75,6 @@ public abstract class AbstractFilterCli implements Runnable {
     protected boolean outerBoundMatchOnly;
 
     protected abstract KMerMatcherFactory<VDJCGene, ? extends AbstractKmerMatcher<VDJCGene>> getMatcherFactory();
-
-    static final boolean USE_CC_REDBERRY_PIPE = true;
 
     @Override
     public void run() {
@@ -117,25 +115,24 @@ public abstract class AbstractFilterCli implements Runnable {
     }
 
     private <R extends SequenceRead, T>
-    void runPipelineJavaStream(SequenceReaderCloseable<R> reader,
-                               SequenceWriter<R> writer,
-                               BsmProcessor<R, T> bsmProcessor) {
+    void runPipeline(SequenceReaderCloseable<R> reader,
+                     SequenceWriter<R> writer,
+                     BsmProcessor<R, T> bsmProcessor) {
         AtomicLong totalReads = new AtomicLong(), readsPassedFilter = new AtomicLong();
 
-        var stream = new SequenceReaderIterator<>(reader)
-                .parallelStream();
+        var stream = new SequenceReaderIterator<>(reader).parallelStream();
 
         if (limit > 0) {
             stream = stream.limit(limit);
         }
 
         stream.filter(x -> {
-            boolean passes = !bsmProcessor.process(x).isAnnotated();
+            boolean passes = bsmProcessor.process(x).isAnnotated();
 
             long total = totalReads.incrementAndGet(),
                     passed = passes ? readsPassedFilter.incrementAndGet() : readsPassedFilter.get();
 
-            if (total % 500000L == 0) {
+            if (total % 1000000L == 0) {
                 sout("Processed N=" + total + " reads, p=" +
                         passed / (float) total + "(n=" + passed + ") reads passed filter.");
             }
@@ -147,36 +144,6 @@ public abstract class AbstractFilterCli implements Runnable {
                 passed = readsPassedFilter.get();
         sout("Finished processing " + inputPaths + ". Processed N=" + total + " reads, p=" +
                 passed / (float) total + "(n=" + passed + ") reads passed filter.");
-    }
-
-    private <R extends SequenceRead, T, I extends SequenceReaderCloseable<R> & CanReportProgress>
-    void runPipelineRedberry(I reader,
-                             SequenceWriter<R> writer,
-                             BsmProcessor<R, T> bsmProcessor) {
-        SmartProgressReporter.startProgressReport("Processing", reader);
-
-        var input = limit > 0 ?
-                new CountLimitingOutputPort<>(reader, limit) : reader;
-
-        var result = new ParallelProcessor<>(input, bsmProcessor, threads);
-
-        for (AnnotatedRead<R, T> annotatedRead : CUtils.it(result)) {
-            if (annotatedRead.isAnnotated()) {
-                writer.write(annotatedRead.getRead());
-            }
-        }
-
-    }
-
-    private <R extends SequenceRead, T, I extends SequenceReaderCloseable<R> & CanReportProgress>
-    void runPipeline(I reader,
-                     SequenceWriter<R> writer,
-                     BsmProcessor<R, T> bsmProcessor) {
-        if (USE_CC_REDBERRY_PIPE) {
-            runPipelineRedberry(reader, writer, bsmProcessor);
-        } else {
-            runPipelineJavaStream(reader, writer, bsmProcessor);
-        }
     }
 
     private void makeFolders() {

@@ -1,7 +1,6 @@
 package com.antigenomics.ilrfilter;
 
 import com.milaboratory.core.io.sequence.PairedRead;
-import com.milaboratory.core.io.sequence.SequenceRead;
 import com.milaboratory.core.io.sequence.SingleRead;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
