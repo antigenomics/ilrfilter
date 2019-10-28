@@ -16,6 +16,8 @@ public class SandboxTests {
 
         print((a | (byte)2) << 2);
         print( (((a | (byte)2) << 2) >> 2) & 3);
+
+        System.out.println( 1 << 25);
     }
 
     private void print(long x) {

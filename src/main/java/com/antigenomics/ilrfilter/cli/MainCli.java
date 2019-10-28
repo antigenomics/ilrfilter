@@ -10,6 +10,9 @@ public class MainCli implements Runnable {
         CommandLine cmd = new CommandLine(new MainCli())
                 .addSubcommand("hash", new HashFilterCli())
                 .addSubcommand("tree", new TreeFilterCli());
+        if (args.length == 0) {
+            args = new String[]{"-h"};
+        }
         cmd.execute(args);
     }
 

@@ -53,12 +53,6 @@ public abstract class AbstractFilterCli implements Runnable {
             description = "Number of reads to take. Will use all reads if not a positive number (default: ${DEFAULT-VALUE})")
     protected int limit;
 
-    @CommandLine.Option(names = {"-t", "--threads"},
-            defaultValue = "4mc",
-            paramLabel = "[1,inf)",
-            description = "Number of threads to use. Will use all available threads if not a positive number (default: ${DEFAULT-VALUE})")
-    protected int threads;
-
     @CommandLine.Option(names = {"-mo", "--max-offset"},
             defaultValue = "1",
             paramLabel = "[0,inf)",
@@ -74,39 +68,38 @@ public abstract class AbstractFilterCli implements Runnable {
 
     @Override
     public void run() {
-        try {
-            threads = threads < 1 ? Runtime.getRuntime().availableProcessors() : threads;
 
-            sout("Started processing " + inputPaths + ". Initializing K-mer library..");
+        sout("Started processing " + inputPaths + ". Initializing K-mer library..");
 
-            BoundarySegmentMatcher<VDJCGene, ? extends AbstractKmerMatcher<VDJCGene>> bsm = new BoundarySegmentMatcher<>(
-                    getMatcherFactory(),
-                    new RepseqioReferenceProvider(),
-                    species,
-                    maxOffset,
-                    outerBoundMatchOnly
-            );
+        BoundarySegmentMatcher<VDJCGene, ? extends AbstractKmerMatcher<VDJCGene>> bsm = new BoundarySegmentMatcher<>(
+                getMatcherFactory(),
+                new RepseqioReferenceProvider(),
+                species,
+                maxOffset,
+                outerBoundMatchOnly
+        );
 
-            sout("K-mer library initialized.");
+        sout("K-mer library initialized.");
 
-            if (inputPaths.size() == 2) {
-                try (PairedFastqReader reader = new PairedFastqReader(
-                        inputPaths.get(0),
-                        inputPaths.get(1));
-                     PairedFastqWriter writer = new PairedFastqWriter(
-                             createPath("_R1.fastq", true),
-                             createPath("_R2.fastq", false)
-                     )) {
-                    runPipeline(reader, writer, bsm.asPairedReadProcessor());
-                }
-            } else {
-                try (SingleFastqReader reader = new SingleFastqReader(inputPaths.get(0));
-                     SingleFastqWriter writer = new SingleFastqWriter(createPath("_R1.fastq", true))) {
-                    runPipeline(reader, writer, bsm.asSingleReadProcessor());
-                }
+        if (inputPaths.size() == 2) {
+            try (PairedFastqReader reader = new PairedFastqReader(
+                    inputPaths.get(0),
+                    inputPaths.get(1));
+                 PairedFastqWriter writer = new PairedFastqWriter(
+                         createPath("_R1.fastq", true),
+                         createPath("_R2.fastq", false)
+                 )) {
+                runPipeline(reader, writer, bsm.asPairedReadProcessor());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } else {
+            try (SingleFastqReader reader = new SingleFastqReader(inputPaths.get(0));
+                 SingleFastqWriter writer = new SingleFastqWriter(createPath("_R1.fastq", true))) {
+                runPipeline(reader, writer, bsm.asSingleReadProcessor());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
